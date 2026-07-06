@@ -2,10 +2,15 @@ package main
 import ("fmt"
 "os"
 "bufio"
-"strings")
+"strings"
+"time"
+"github.com/RamyGarici/pokedex_go/internal/pokecache")
 
 func startRepl() {
-	cfg := &config{}
+	cfg := &config{
+		Cache:   pokecache.NewCache(5 * time.Minute),
+		Pokedex: make(map[string]Pokemon),
+	}
 	commands := getCommands()
 	reader := bufio.NewScanner(os.Stdin)
 	for {
@@ -18,8 +23,13 @@ if len(words)==0{
 }
 commandName := words[0]
 command,exists := commands[commandName]
+var args []string
+if len(words) > 1 {
+	args = words[1:]
+}
+
 if exists{
-	err:= command.callback(cfg)
+	err:= command.callback(cfg, args...)
 	if err!= nil{
 		fmt.Println(err)
 	}
@@ -44,7 +54,7 @@ func cleanInput(text string) []string {
 type cliCommand struct{
 	name string
 	description string
-	callback func(cfg *config) error
+	callback func(cfg *config, args ...string) error
 }
 func getCommands()  map[string]cliCommand{
 	return  map[string]cliCommand{
@@ -63,6 +73,21 @@ func getCommands()  map[string]cliCommand{
 		description: "List Pokemon locations" ,
 		callback:    commandMap,
 	},
+	"mapb":{
+		name:        "mapb",
+		description: "List Pokemon locations (Previous page)" ,
+		callback:    commandMapb,
+	},
+	"explore":{
+		name:        "explore",
+		description: "List Pokemons of a location" ,
+		callback:    commandExplore,
+	},
+	"catch":{
+		name: "catch",
+		description: "Catch a pokemon",
+		callback: commandCatch,
 
+	},
 }
 }
